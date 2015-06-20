@@ -2,6 +2,7 @@
 
 module.exports = {
   mqttServer: "mqtt://test.mosquitto.org",
-  siteName: "enter site name"
+  siteName: "enter site name",
+  siteShortName: "siteName"
 }
 

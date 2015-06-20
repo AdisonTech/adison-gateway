@@ -33,7 +33,7 @@ setInterval(function() {
       if (err) {
         console.log('Error reading ' + name + err);
       } else {
-        mqttClient.publish('node/wemo/' + name, result);
+        mqttClient.publish('node/' + config.siteShortName + '/wemo/' + name, result);
       }
     });
 
