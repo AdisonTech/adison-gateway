@@ -1,0 +1,7 @@
+# copy this file to config.js, and modify
+
+module.exports = {
+  mqttServer: "mqtt://test.mosquitto.org",
+  siteName: "enter site name"
+}
+
