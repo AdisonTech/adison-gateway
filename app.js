@@ -33,7 +33,9 @@ setInterval(function() {
       if (err) {
         console.log('Error reading ' + name + err);
       } else {
-        mqttClient.publish('node/' + config.siteShortName + '/wemo/' + name, result);
+        var topicBase = 'node/' + config.siteShortName + '/wemo/' + name + '/';
+        mqttClient.publish(topicBase + 'modelName', d.modelName);
+        mqttClient.publish(topicBase + 'binaryState', result);
       }
     });
 
