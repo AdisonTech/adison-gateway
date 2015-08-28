@@ -1,30 +1,34 @@
 #!/usr/bin/env node
 
 var config = require('./config');
-var mqtt = require('mqtt');
-var wemo = require('wemo');
+var ddpManager = require('./DdpManager.js');
+var wemoManager = require('./WemoManager.js');
+var Promise = require('bluebird');
 
-var mqttClient  = mqtt.connect(config.mqttServer);
- 
-mqttClient.on('connect', function () {
-  mqttClient.subscribe('presence');
-  mqttClient.publish('presence', 'Hello mqtt');
-});
- 
-mqttClient.on('message', function (topic, message) {
-  // message is Buffer 
-  console.log(message.toString());
-});
+// data structure that contains the local "database"
+// for a site
+var site = {};
 
-wemoClient = wemo.Search();
+var ddp = new ddpManager(config.siteShortName, config.meteorServer);
+var wemo = new wemoManager();
 
-var wemoDevices = {};
-
-wemoClient.on('found', function(device) {
-  console.log(device);
-  wemoDevices[device.friendlyName] = device;
+ddp.on('siteUpdated', function(site) {
+  console.log('siteUpdated', site);
 });
 
+wemo.on('nodesUpdate', function(nodes) {
+  console.log('nodesUpdate', nodes);
+});
+
+ddp.connect()
+.then(ddp.subscribe())
+.then(function() {
+  console.log('DDP subscribed');
+  wemo.discover();
+});
+
+
+/*
 setInterval(function() {
   for (var name in wemoDevices) {
     var d = wemoDevices[name];
@@ -42,5 +46,6 @@ setInterval(function() {
   }
 }, 3000);
 
+*/
 
 
