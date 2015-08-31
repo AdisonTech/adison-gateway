@@ -14,10 +14,12 @@ var wemo = new wemoManager();
 
 ddp.on('siteUpdated', function(site) {
   console.log('siteUpdated', site);
+  wemo.update(site.nodes);
 });
 
 wemo.on('nodesUpdate', function(nodes) {
   console.log('nodesUpdate', nodes);
+  ddp.sendSite(config.siteShortName, nodes);
 });
 
 ddp.connect()

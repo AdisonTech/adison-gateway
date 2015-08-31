@@ -47,6 +47,15 @@ DdpManager.prototype.connect = function() {
       }
       that.emit('siteUpdated', that.site);
     });
+
+    that.ddp.on('result', function(message) {
+      console.log('result', message);
+    });
+
+    that.ddp.on('updated', function(message) {
+      console.log('updated', message);
+    });
+
   });
 }
 
@@ -61,5 +70,9 @@ DdpManager.prototype.subscribe = function() {
       }
     });
   });
+}
+
+DdpManager.prototype.sendSite = function(site, nodes) {
+  this.ddp.method('updateNodes', [site, nodes]);  
 }
 

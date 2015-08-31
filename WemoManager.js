@@ -20,6 +20,7 @@ var WemoManager = module.exports = function() {
   this.wemo = new Wemo();
   this.nodes = [];
   this.nodeIndex = {};
+  this.wemoClients = {};
 }
 
 util.inherits(WemoManager, events.EventEmitter);
@@ -73,6 +74,8 @@ WemoManager.prototype.discover = function() {
     // Get the client for the found device
     var client = that.wemo.client(deviceInfo);
 
+    that.wemoClients[deviceId] = client;
+
     client.getEndDevices(function(err, end) {
       end.forEach(function(e) {
         that.updateNode(e.deviceId, {
@@ -83,24 +86,55 @@ WemoManager.prototype.discover = function() {
           brightness: /(\d*):/.exec(e.internalState['10008'])[1]/255
         });
         that.queueUpdateNodesEvent();
+        that.wemoClients[e.deviceId] = client;
       });
     });
 
     // Handle BinaryState events
     client.on('binaryState', function(value) {
-      that.updateNode(deviceId, {binaryState: value});
+      that.updateNode(deviceId, {binaryState: value, cmdBinaryState: value});
       that.emit('nodesUpdate', that.nodes);
     });
 
     client.on('statusChange', function(dev, cap, value) {
       if (cap === '10008') {
-        that.updateNode(dev, {brightness: /(\d*):/.exec(value)[1]/255});
+        var b = /(\d*):/.exec(value)[1]/255;
+        that.updateNode(dev, {brightness:b, cmdBrightness:b});
         that.emit('nodesUpdate', that.nodes);
       } else if (cap === '10006') {
-        that.updateNode(dev, {binaryState: value});
+        that.updateNode(dev, {binaryState: value, cmdBinaryState: value});
         that.emit('nodesUpdate', that.nodes);
       }
     });
   });
+}
+
+WemoManager.prototype.setBulbBinaryState = function(devId, state) {
+  if (devId in this.wemoClients) {
+    console.log('setting ' + devId + ' ' + state);
+    this.wemoClients[devId].setDeviceStatus(devId, '10006', state);
+  }
+}
+
+
+WemoManager.prototype.setBulbBrightness = function(devId, brightness) {
+  if (devId in this.wemoClients) {
+    console.log('setting ' + devId + ' ' + brightness*100 + '%');
+    this.wemoClients[devId].setDeviceStatus(devId, '10008', brightness*255);
+  }
+}
+
+WemoManager.prototype.update = function(nodes) {
+  var that = this;
+  nodes.forEach(function(n) {
+    if (n.type == 'bulb') {
+      if (n.cmdBinaryState && (n.binaryState !== n.cmdBinaryState)) {
+        that.setBulbBinaryState(n.deviceId, n.cmdBinaryState);
+      }
+      if (n.cmdBrightness && (n.brightness !== n.cmdBrightness)) {
+        that.setBulbBrightness(n.deviceId, n.cmdBrightness);
+      }
+    }
+  }) 
 }
 
