@@ -1,7 +1,7 @@
 # copy this file to config.js, and modify
 
 module.exports = {
-  mqttServer: "mqtt://test.mosquitto.org",
+  meteorServer: "http://myserver.com",
   siteName: "enter site name",
   siteShortName: "siteName"
 }
