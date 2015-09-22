@@ -12,6 +12,8 @@ var events = require("events");
 function translateType(deviceType) {
   if (/bridge/.exec(deviceType)) {
     return 'bridge';
+  } else if (/insight/.exec(deviceType)) {
+    return 'outlet';
   }
 }
 
@@ -32,9 +34,9 @@ WemoManager.prototype.queueUpdateNodesEvent = function() {
   this.emit('nodesUpdate', this.nodes);
   /*
   if (!this.updateNodeTimer) {
-    var that = this;
+    var self = this;
     this.updateNodeTimer = setTimeout(function() {
-      that.emit('nodesUpdate', that.nodes);
+      self.emit('nodesUpdate', self.nodes);
       this.updateNodeTimer = null;
     }, 1000);
   }
@@ -58,52 +60,62 @@ WemoManager.prototype.updateNode = function(deviceId, props) {
 
 WemoManager.prototype.discover = function() {
   console.log('Wemo discovery ...');
-  var that = this;
+  var self = this;
   this.wemo.discover(function(deviceInfo) {
     var deviceId = deviceInfo.UDN;
 
-    that.updateNode(deviceId, {
+    self.updateNode(deviceId, {
       friendlyName:deviceInfo.friendlyName,
       type:translateType(deviceInfo.deviceType),
       ip: deviceInfo.host,
       deviceId: deviceId
     });
 
-    that.queueUpdateNodesEvent();
+    self.queueUpdateNodesEvent();
 
     // Get the client for the found device
-    var client = that.wemo.client(deviceInfo);
+    var client = self.wemo.client(deviceInfo);
 
-    that.wemoClients[deviceId] = client;
+    self.wemoClients[deviceId] = client;
 
-    client.getEndDevices(function(err, end) {
-      end.forEach(function(e) {
-        that.updateNode(e.deviceId, {
-          friendlyName: e.friendlyName,
-          type: 'bulb',
-          deviceId: e.deviceId,
-          binaryState: e.internalState['10006'],
-          brightness: /(\d*):/.exec(e.internalState['10008'])[1]/255
+    console.log('deviceType', deviceInfo.deviceType);
+
+    if (deviceInfo.deviceType.search('Belkin:device:bridge') >= 0) {
+      client.getEndDevices(function(err, end) {
+        end.forEach(function(e) {
+          console.log(e);
+          var bright = e.internalState['10008'] ? 
+            /(\d*):/.exec(e.internalState['10008'])[1]/255 : 0;
+          var state = e.internalState['10006'] ? e.internalState['10006'] : '0';
+
+          self.updateNode(e.deviceId, {
+            friendlyName: e.friendlyName,
+            type: 'bulb',
+            deviceId: e.deviceId,
+            binaryState: state,
+            brightness: bright 
+          });
+
+          self.queueUpdateNodesEvent();
+          self.wemoClients[e.deviceId] = client;
         });
-        that.queueUpdateNodesEvent();
-        that.wemoClients[e.deviceId] = client;
       });
-    });
+    }
 
     // Handle BinaryState events
     client.on('binaryState', function(value) {
-      that.updateNode(deviceId, {binaryState: value, cmdBinaryState: value});
-      that.emit('nodesUpdate', that.nodes);
+      self.updateNode(deviceId, {binaryState: value, cmdBinaryState: value});
+      self.emit('nodesUpdate', self.nodes);
     });
 
     client.on('statusChange', function(dev, cap, value) {
       if (cap === '10008') {
         var b = /(\d*):/.exec(value)[1]/255;
-        that.updateNode(dev, {brightness:b, cmdBrightness:b});
-        that.emit('nodesUpdate', that.nodes);
+        self.updateNode(dev, {brightness:b, cmdBrightness:b});
+        self.emit('nodesUpdate', self.nodes);
       } else if (cap === '10006') {
-        that.updateNode(dev, {binaryState: value, cmdBinaryState: value});
-        that.emit('nodesUpdate', that.nodes);
+        self.updateNode(dev, {binaryState: value, cmdBinaryState: value});
+        self.emit('nodesUpdate', self.nodes);
       }
     });
   });
@@ -125,14 +137,14 @@ WemoManager.prototype.setBulbBrightness = function(devId, brightness) {
 }
 
 WemoManager.prototype.update = function(nodes) {
-  var that = this;
+  var self = this;
   nodes.forEach(function(n) {
     if (n.type == 'bulb') {
       if (n.cmdBinaryState && (n.binaryState !== n.cmdBinaryState)) {
-        that.setBulbBinaryState(n.deviceId, n.cmdBinaryState);
+        self.setBulbBinaryState(n.deviceId, n.cmdBinaryState);
       }
       if (n.cmdBrightness && (n.brightness !== n.cmdBrightness)) {
-        that.setBulbBrightness(n.deviceId, n.cmdBrightness);
+        self.setBulbBrightness(n.deviceId, n.cmdBrightness);
       }
     }
   }) 
