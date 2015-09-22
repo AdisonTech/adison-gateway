@@ -1,4 +1,4 @@
-# copy this file to config.js, and modify
+// copy this file to config.js, and modify
 
 module.exports = {
   meteorServer: "http://myserver.com",
