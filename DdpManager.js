@@ -26,6 +26,7 @@ DdpManager.prototype.connect = function() {
     that.ddp = new DDP(ddpOptions);
 
     that.ddp.on('connected', function() {
+      console.log('ddp connected');
       resolve();
     });
 

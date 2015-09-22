@@ -123,7 +123,7 @@ WemoManager.prototype.discover = function() {
 
 WemoManager.prototype.setBulbBinaryState = function(devId, state) {
   if (devId in this.wemoClients) {
-    console.log('setting ' + devId + ' ' + state);
+    console.log('setting bulb binary state' + devId + ' ' + state);
     this.wemoClients[devId].setDeviceStatus(devId, '10006', state);
   }
 }
@@ -136,6 +136,13 @@ WemoManager.prototype.setBulbBrightness = function(devId, brightness) {
   }
 }
 
+WemoManager.prototype.setBinaryState = function(devId, state) {
+  if (devId in this.wemoClients) {
+    console.log('setting binary state ' + devId + ' ' + state);
+    this.wemoClients[devId].setBinaryState(state === '0' ? 0 : 1);
+  }
+}
+
 WemoManager.prototype.update = function(nodes) {
   var self = this;
   nodes.forEach(function(n) {
@@ -145,6 +152,10 @@ WemoManager.prototype.update = function(nodes) {
       }
       if (n.cmdBrightness && (n.brightness !== n.cmdBrightness)) {
         self.setBulbBrightness(n.deviceId, n.cmdBrightness);
+      }
+    } else if (n.type == 'outlet') {
+      if (n.cmdBinaryState && (n.binaryState !== n.cmdBinaryState)) {
+        self.setBinaryState(n.deviceId, n.cmdBinaryState);
       }
     }
   }) 
