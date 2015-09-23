@@ -23,6 +23,7 @@ The version of nodejs distributed in the raspbian is old, so install something m
 
 * wget https://nodejs.org/dist/v4.1.1/node-v4.1.1-linux-armv7l.tar.gz
 * tar -xzvf node-v4.1.1-linux-armv7l.tar.gz
+* sudo mv  node-v4.1.1-linux-armv7l /opt/
 * sudo chown -R $USER /usr/local
 * ln -s /opt/node-v4.1.1-linux-armv7l/bin/node /usr/local/bin/
 * ln -s /opt/node-v4.1.1-linux-armv7l/bin/npm /usr/local/bin/
