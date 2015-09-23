@@ -8,9 +8,9 @@ Adison Gateway is a nodejs app that provides a link between the [Adison Cloud](h
 
 * set up [Adison Cloud](https://github.com/AdisonTech/adison-cloud)
 * [install](https://nodejs.org) nodejs
-* git clone https://github.com/AdisonTech/adison-gateway.git
-* npm install
+* git clone https://github.com/AdisonTech/adison-gateway.git or download [zip](https://github.com/AdisonTech/adison-gateway/archive/master.zip) archive.
 * cd adison-gateway
+* npm install
 * cp config.js.example config.js
 * edit config.js as needed
 * node app.js
