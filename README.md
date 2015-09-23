@@ -15,7 +15,7 @@ Adison Gateway is a nodejs app that provides a link between the [Adison Cloud](h
 * edit config.js as needed.  Defaults should work if cloud app is running on the same machine as the gateway.
 * node app.js
 
-After the gateway is started, you should the site appear in the cloud UI.
+After the gateway is started, your site should appear in the cloud UI.  If any Wemo devices are on your network, they should be displayed as well.
 
 ## Status
 
