@@ -31,7 +31,7 @@ The version of nodejs distributed in the raspbian is old, so install something m
 
 Currently only Wemo Link and Insight nodes are supported.  See [Issues](https://github.com/AdisonTech/adison-gateway/issues) for status on features in progress.
 
-Tested on Linux and Windows 7 with NodeJS 4.1 and Meteor 1.2.
+Tested on x86 Linux, Windows 7 and Raspberry PI 2 with NodeJS 4.1 and Meteor 1.2.
 
 ## License 
 
