@@ -19,7 +19,7 @@ After the gateway is started, your site should appear in the cloud UI.  If any W
 
 ### Installing nodejs on Raspberry PI
 
-The version of nodejs distributed in the raspbian is old, so install the latest something more recent directly from nodejs.org:
+The version of nodejs distributed in the raspbian is old, so install something more recent directly from nodejs.org:
 
 * wget https://nodejs.org/dist/v4.1.1/node-v4.1.1-linux-armv7l.tar.gz
 * tar -xzvf node-v4.1.1-linux-armv7l.tar.gz
