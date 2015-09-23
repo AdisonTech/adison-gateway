@@ -21,7 +21,7 @@ After the gateway is started, your site should appear in the cloud UI.  If any W
 
 Currently only Wemo Link and Insight nodes are supported.  See [Issues](https://github.com/AdisonTech/adison-gateway/issues) for status on features in progress.
 
-Tested on Arch Linux and Windows 7 with NodeJS 4.1 and Meteor 1.2.
+Tested on Linux and Windows 7 with NodeJS 4.1 and Meteor 1.2.
 
 ## License 
 
