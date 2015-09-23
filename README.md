@@ -12,7 +12,7 @@ Adison Gateway is a nodejs app that provides a link between the [Adison Cloud](h
 * cd adison-gateway
 * npm install
 * cp config.js.example config.js
-* edit config.js as needed
+* edit config.js as needed.  Defaults should work if cloud app is running on the same machine as the gateway.
 * node app.js
 
 After the gateway is started, you should the site appear in the cloud UI.
