@@ -12,14 +12,14 @@ var site = {};
 var ddp = new ddpManager(config.siteShortName, config.meteorServer);
 var wemo = new wemoManager();
 
-ddp.on('siteUpdated', function(site) {
-  console.log('siteUpdated', site);
-  wemo.update(site.nodes);
+ddp.on('nodeUpdate', function(node) {
+  console.log('ddp nodeUpdate', node);
+  wemo.update(node);
 });
 
-wemo.on('nodesUpdate', function(nodes) {
-  console.log('nodesUpdate', nodes);
-  ddp.sendSite(config.siteShortName, nodes);
+wemo.on('nodeUpdate', function(node) {
+  console.log('wemo nodeUpdate', node);
+  ddp.sendNode(config.siteShortName, node);
 });
 
 ddp.connect()
@@ -29,25 +29,5 @@ ddp.connect()
   wemo.discover();
 });
 
-
-/*
-setInterval(function() {
-  for (var name in wemoDevices) {
-    var d = wemoDevices[name];
-    var wemoSwitch = new wemo(d.ip, d.port);
-    wemoSwitch.getBinaryState(function(err, result) {
-      if (err) {
-        console.log('Error reading ' + name + err);
-      } else {
-        var topicBase = 'node/' + config.siteShortName + '/wemo/' + name + '/';
-        mqttClient.publish(topicBase + 'modelName', d.modelName);
-        mqttClient.publish(topicBase + 'binaryState', result);
-      }
-    });
-
-  }
-}, 3000);
-
-*/
 
 

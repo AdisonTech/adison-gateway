@@ -31,7 +31,13 @@ WemoManager.prototype.queueUpdateNodesEvent = function() {
   // this function is used to signal up the stack.
   // we use a timer so that we don't fire a ton of events
   // during device discovery.
-  this.emit('nodesUpdate', this.nodes);
+  var self = this;
+  this.nodes.forEach(function(n) {
+    if (n.dirty) {
+      n.dirty = false;
+      self.emit('nodeUpdate', n);
+    }
+  });
   /*
   if (!this.updateNodeTimer) {
     var self = this;
@@ -43,16 +49,30 @@ WemoManager.prototype.queueUpdateNodesEvent = function() {
   */
 }
 
+WemoManager.prototype.getNode = function(deviceId) {
+  if (devicdId in this.nodeIndex) {
+    var i = this.nodeIndex[deviceId];
+    return this.nodes[i];
+  } else {
+    console.log('Warning, getNode returning null', deviceId);
+    return null;
+  }
+}
+
 WemoManager.prototype.updateNode = function(deviceId, props) {
   if (deviceId in this.nodeIndex) {
     // merge into existing node
     var i = this.nodeIndex[deviceId];
     for (var p in props) {
-      this.nodes[i][p] = props[p];
+      if (this.nodes[i][p] != props[p]) {
+        this.nodes[i].dirty = true;
+        this.nodes[i][p] = props[p];
+      }
     }
   } else {
     // create a new node
     props.deviceId = deviceId;
+    props.dirty = true;
     this.nodes.push(props);
     this.nodeIndex[deviceId] = this.nodes.length - 1;
   } 
@@ -105,17 +125,17 @@ WemoManager.prototype.discover = function() {
     // Handle BinaryState events
     client.on('binaryState', function(value) {
       self.updateNode(deviceId, {binaryState: value, cmdBinaryState: value});
-      self.emit('nodesUpdate', self.nodes);
+      self.queueUpdateNodesEvent();
     });
 
     client.on('statusChange', function(dev, cap, value) {
       if (cap === '10008') {
         var b = /(\d*):/.exec(value)[1]/255;
         self.updateNode(dev, {brightness:b, cmdBrightness:b});
-        self.emit('nodesUpdate', self.nodes);
+        self.queueUpdateNodesEvent();
       } else if (cap === '10006') {
         self.updateNode(dev, {binaryState: value, cmdBinaryState: value});
-        self.emit('nodesUpdate', self.nodes);
+        self.queueUpdateNodesEvent();
       }
     });
   });
@@ -143,21 +163,21 @@ WemoManager.prototype.setBinaryState = function(devId, state) {
   }
 }
 
-WemoManager.prototype.update = function(nodes) {
-  var self = this;
-  nodes.forEach(function(n) {
-    if (n.type == 'bulb') {
-      if (n.cmdBinaryState && (n.binaryState !== n.cmdBinaryState)) {
-        self.setBulbBinaryState(n.deviceId, n.cmdBinaryState);
-      }
-      if (n.cmdBrightness && (n.brightness !== n.cmdBrightness)) {
-        self.setBulbBrightness(n.deviceId, n.cmdBrightness);
-      }
-    } else if (n.type == 'outlet') {
-      if (n.cmdBinaryState && (n.binaryState !== n.cmdBinaryState)) {
-        self.setBinaryState(n.deviceId, n.cmdBinaryState);
-      }
+WemoManager.prototype.update = function(node) {
+  if (!node)
+    return;
+
+  if (node.type == 'bulb') {
+    if (node.cmdBinaryState && (node.binaryState !== node.cmdBinaryState)) {
+      this.setBulbBinaryState(node.deviceId, node.cmdBinaryState);
     }
-  }) 
+    if (node.cmdBrightness && (node.brightness !== node.cmdBrightness)) {
+      this.setBulbBrightness(node.deviceId, node.cmdBrightness);
+    }
+  } else if (node.type == 'outlet') {
+    if (node.cmdBinaryState && (node.binaryState !== node.cmdBinaryState)) {
+      this.setBinaryState(node.deviceId, node.cmdBinaryState);
+    }
+  }
 }
 

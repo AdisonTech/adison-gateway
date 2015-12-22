@@ -8,7 +8,7 @@ var events = require("events");
 var DdpManager = module.exports = function(siteShortName, meteorServer) {
   this.siteShortName = siteShortName;
   this.meteorServer = meteorServer;
-  this.site = {};
+  this.nodes = {};  // mongo _id is key
 
   events.EventEmitter.call(this);
 }
@@ -16,44 +16,41 @@ var DdpManager = module.exports = function(siteShortName, meteorServer) {
 util.inherits(DdpManager, events.EventEmitter);
 
 DdpManager.prototype.connect = function() {
-  var that = this;
+  var self = this;
   return new Promise(function(resolve, reject) {
     var ddpOptions = {
-      endpoint: that.meteorServer + '/websocket',
+      endpoint: self.meteorServer + '/websocket',
       SocketConstructor: WebSocket
     };
 
-    that.ddp = new DDP(ddpOptions);
+    self.ddp = new DDP(ddpOptions);
 
-    that.ddp.on('connected', function() {
+    self.ddp.on('connected', function() {
       console.log('ddp connected');
       resolve();
     });
 
-    that.ddp.on('nosub', function(message) {
+    self.ddp.on('nosub', function(message) {
       console.log('nosub', message);
     });
 
-    that.ddp.on('added', function(message) {
-      if (message.collection === 'sites') {
-        that.site = message.fields;
-      }
-      that.emit('siteUpdated', that.site);
+    self.ddp.on('added', function(message) {
+      self.nodes[message.id] = message.fields;
+      self.emit('nodeUpdate', message.fields);
     });
 
-    that.ddp.on('changed', function(message) {
-      // merge changes to local object
+    self.ddp.on('changed', function(message) {
       for (var attr in message.fields) {
-        that.site[attr] = message.fields[attr];
+        self.nodes[message.id][attr] = message.fields[attr];
       }
-      that.emit('siteUpdated', that.site);
+      self.emit('nodeUpdate', self.nodes[message.id]);
     });
 
-    that.ddp.on('result', function(message) {
+    self.ddp.on('result', function(message) {
       console.log('result', message);
     });
 
-    that.ddp.on('updated', function(message) {
+    self.ddp.on('updated', function(message) {
       console.log('updated', message);
     });
 
@@ -61,11 +58,11 @@ DdpManager.prototype.connect = function() {
 }
 
 DdpManager.prototype.subscribe = function() {
-  var that = this;
+  var self = this;
   return new Promise(function(resolve, reject) {
-    var subId = that.ddp.sub('site', [that.siteShortName]);
+    var subId = self.ddp.sub('nodesForSite', [self.siteShortName]);
 
-    that.ddp.on('ready', function(message) {
+    self.ddp.on('ready', function(message) {
       if (message.id = subId) {
         resolve();
       }
@@ -73,7 +70,7 @@ DdpManager.prototype.subscribe = function() {
   });
 }
 
-DdpManager.prototype.sendSite = function(site, nodes) {
-  this.ddp.method('updateNodes', [site, nodes]);  
+DdpManager.prototype.sendNode = function(site, node) {
+  this.ddp.method('updateNode', [site, node]);  
 }
 
