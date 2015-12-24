@@ -3,6 +3,7 @@ var Wemo = require('wemo-client');
 var Promise = require('bluebird');
 var util = require("util");
 var events = require("events");
+var merge = require('deepmerge');
 
 // node is object of objects. Key is friendlyName
 //  -- type (bridge, insight, bulb)
@@ -62,13 +63,10 @@ WemoManager.prototype.getNode = function(deviceId) {
 WemoManager.prototype.updateNode = function(deviceId, props) {
   if (deviceId in this.nodeIndex) {
     // merge into existing node
+    props.dirty = true;
     var i = this.nodeIndex[deviceId];
-    for (var p in props) {
-      if (this.nodes[i][p] != props[p]) {
-        this.nodes[i].dirty = true;
-        this.nodes[i][p] = props[p];
-      }
-    }
+    var node_ = merge(this.nodes[i], props);
+    this.nodes[i] = node_;
   } else {
     // create a new node
     props.deviceId = deviceId;
@@ -112,8 +110,14 @@ WemoManager.prototype.discover = function() {
             friendlyName: e.friendlyName,
             type: 'bulb',
             deviceId: e.deviceId,
-            binaryState: state,
-            brightness: bright 
+            inputs: {
+              binaryState: state,
+              brightness: bright
+            },
+            outputs: {
+              binaryState: state,
+              brightness: bright
+            },
           });
 
           self.queueUpdateNodesEvent();
@@ -124,17 +128,30 @@ WemoManager.prototype.discover = function() {
 
     // Handle BinaryState events
     client.on('binaryState', function(value) {
-      self.updateNode(deviceId, {binaryState: value, cmdBinaryState: value});
+      self.updateNode(deviceId,
+        {
+          inputs: {binaryState: value},
+          outputs: {binaryState: value}
+        });
       self.queueUpdateNodesEvent();
     });
 
     client.on('statusChange', function(dev, cap, value) {
+      console.log('statusChange', dev, cap, value);
       if (cap === '10008') {
         var b = /(\d*):/.exec(value)[1]/255;
-        self.updateNode(dev, {brightness:b, cmdBrightness:b});
+        self.updateNode(dev, 
+          {
+            inputs: {brightness:b},
+            outputs: {brightness:b}
+          });
         self.queueUpdateNodesEvent();
       } else if (cap === '10006') {
-        self.updateNode(dev, {binaryState: value, cmdBinaryState: value});
+        self.updateNode(dev, 
+          {
+            inputs: {binaryState: value}, 
+            outputs: {binaryState: value}
+          });
         self.queueUpdateNodesEvent();
       }
     });
@@ -164,19 +181,19 @@ WemoManager.prototype.setBinaryState = function(devId, state) {
 }
 
 WemoManager.prototype.update = function(node) {
-  if (!node)
+  if (!node || !node.outputs || !node.inputs)
     return;
 
   if (node.type == 'bulb') {
-    if (node.cmdBinaryState && (node.binaryState !== node.cmdBinaryState)) {
-      this.setBulbBinaryState(node.deviceId, node.cmdBinaryState);
+    if (node.outputs.binaryState && (node.inputs.binaryState !== node.outputs.binaryState)) {
+      this.setBulbBinaryState(node.deviceId, node.outputs.binaryState);
     }
-    if (node.cmdBrightness && (node.brightness !== node.cmdBrightness)) {
-      this.setBulbBrightness(node.deviceId, node.cmdBrightness);
+    if (node.outputs.brightness && (node.inputs.brightness !== node.outputs.brightness)) {
+      this.setBulbBrightness(node.deviceId, node.outputs.brightness);
     }
   } else if (node.type == 'outlet') {
-    if (node.cmdBinaryState && (node.binaryState !== node.cmdBinaryState)) {
-      this.setBinaryState(node.deviceId, node.cmdBinaryState);
+    if (node.outputs.binaryState && (node.inputs.binaryState !== node.outputs.binaryState)) {
+      this.setBinaryState(node.deviceId, node.outputs.binaryState);
     }
   }
 }
